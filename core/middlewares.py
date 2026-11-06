@@ -1,5 +1,4 @@
 import json
-from typing import Any
 from django.utils.decorators import async_only_middleware
 from django.http import HttpRequest, JsonResponse
 
@@ -9,22 +8,19 @@ from django.http import HttpRequest, JsonResponse
 class LoginRequireMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        self.allowed_paths = ['/login']
+        self.allowed_paths = ['/api/login/', '/api/login']
 
     async def __call__(self, request: HttpRequest):
         path = request.path
         user = await request.auser()
 
         # 判断是否为不要认证的url
-        if path in self.allowed_paths:
-            response = await self.get_response(request)
-            return response
-        # 判断是否登录
-        if not user.is_authenticated:
-            return JsonResponse({'error':'Request Unauthorized'}, status=401)
-        else:
-            response = await self.get_response(request)
-            return response
+        if path not in self.allowed_paths:
+            # 判断是否登录
+            if not user.is_authenticated:
+                return JsonResponse({'error':'Request Unauthorized'}, status=401)
+
+        return await self.get_response(request)
 
 @async_only_middleware
 class ParseJsonMiddleware:
